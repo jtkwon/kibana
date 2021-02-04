@@ -15,6 +15,9 @@ export default function ({ getService, getPageObjects }: FtrProviderContext) {
   const kibanaServer = getService('kibanaServer');
   const security = getService('security');
   const PageObjects = getPageObjects(['settings', 'common', 'discover', 'header', 'timePicker']);
+  const log = getService('log');
+  const savedObjects = getService('savedObjects');
+  const supertest = getService('supertest');
   const defaultSettings = {
     defaultIndex: 'long-window-logstash-*',
     'dateFormat:tz': 'Europe/Berlin',
@@ -23,8 +26,9 @@ export default function ({ getService, getPageObjects }: FtrProviderContext) {
   describe('discover histogram', function describeIndexTests() {
     before(async () => {
       await esArchiver.loadIfNeeded('logstash_functional');
-      await esArchiver.load('long_window_logstash');
-      await esArchiver.load('long_window_logstash_index_pattern');
+      const xs = ['long_window_logstash', 'long_window_logstash_index_pattern'];
+      await savedObjects.asyncRecurseImport(log)(supertest)(xs);
+
       await security.testUser.setRoles(['kibana_admin', 'long_window_logstash']);
       await kibanaServer.uiSettings.replace(defaultSettings);
       await PageObjects.common.navigateToApp('discover');
